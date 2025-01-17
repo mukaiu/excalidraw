@@ -1,27 +1,18 @@
-const fs = require("fs");
 const { execSync } = require("child_process");
 
-const excalidrawDir = `${__dirname}/../src/packages/excalidraw`;
+const excalidrawDir = `${__dirname}/../packages/excalidraw`;
 const excalidrawPackage = `${excalidrawDir}/package.json`;
 const pkg = require(excalidrawPackage);
 
-const originalReadMe = fs.readFileSync(`${excalidrawDir}/README.md`, "utf8");
-
-const updateReadme = () => {
-  const excalidrawIndex = originalReadMe.indexOf("### Excalidraw");
-
-  // remove note for stable readme
-  const data = originalReadMe.slice(excalidrawIndex);
-
-  // update readme
-  fs.writeFileSync(`${excalidrawDir}/README.md`, data, "utf8");
-};
-
 const publish = () => {
   try {
+    console.info("Installing the dependencies in root folder...");
     execSync(`yarn  --frozen-lockfile`);
+    console.info("Installing the dependencies in excalidraw directory...");
     execSync(`yarn --frozen-lockfile`, { cwd: excalidrawDir });
-    execSync(`yarn run build:umd`, { cwd: excalidrawDir });
+    console.info("Building ESM Package...");
+    execSync(`yarn run build:esm`, { cwd: excalidrawDir });
+    console.info("Publishing the package...");
     execSync(`yarn --cwd ${excalidrawDir} publish`);
   } catch (error) {
     console.error(error);
@@ -30,15 +21,8 @@ const publish = () => {
 };
 
 const release = () => {
-  updateReadme();
-  console.info("Note for stable readme removed");
-
   publish();
   console.info(`Published ${pkg.version}!`);
-
-  // revert readme after release
-  fs.writeFileSync(`${excalidrawDir}/README.md`, originalReadMe, "utf8");
-  console.info("Readme reverted");
 };
 
 release();
